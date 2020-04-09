@@ -16,3 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return \File::get(public_path() . '/phptest.html');
 });
+
+Route::fallback(function(){
+    return response(json_encode([
+        "error" => 1,
+        "msg" => "invalid request"
+    ]), 404);
+});
