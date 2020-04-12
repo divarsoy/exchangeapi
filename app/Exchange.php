@@ -39,10 +39,16 @@ class Exchange
             return new CurrencyResponse(0, (float) $value, 0);
         }
 
+        $inverseCalculation = false;
         // Check cache for key pair, otherwise fetch from api
         if(Cache::has($fromCurrency."-".$toCurrency)){
             $currencyPair = Cache::get($fromCurrency."-".$toCurrency);
             $cache = 1;
+        }
+        elseif(Cache::has($toCurrency."-".$fromCurrency)){
+            $currencyPair = Cache::get($toCurrency."-".$fromCurrency);
+            $cache = 1;
+            $inverseCalculation = true;
         }
         else {
             try {
@@ -60,7 +66,12 @@ class Exchange
         }
 
         // Calculate currency
-        $convertedValue = $value*$currencyPair['Multiplier'];
+        if($inverseCalculation){
+            $convertedValue = $value/$currencyPair['Multiplier'];
+        }
+        else {
+            $convertedValue = $value*$currencyPair['Multiplier'];
+        }
         return new CurrencyResponse(0, $convertedValue, $cache);
     }
 }
