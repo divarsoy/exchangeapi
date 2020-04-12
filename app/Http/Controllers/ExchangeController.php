@@ -2,15 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Exchange;
+use App\CacheResponse;
+use App\InfoResponse;
+use Illuminate\Support\Facades\Cache;
 
 class ExchangeController extends Controller
 {
 
     protected function info(){
-        return response(json_encode([
-            "error" => 0,
-            "msg" => "API written by Dag Ivarsoy"
-        ]));
+        $response = new InfoResponse(0, "API written by Dag Ivarsoy");
+        return response(json_encode($response->generateResponse()));
+    }
+
+    protected function convert($value, $fromCurrency, $toCurrency, Exchange $exchangeModel) {
+        $result = $exchangeModel->convert($value, $fromCurrency, $toCurrency);
+        return response(json_encode($result->generateResponse()));
+    }
+
+    protected function clearCache(){
+        Cache::flush();
+        $response = new CacheResponse(0, "Cache has been cleared");
+        return response(json_encode($response->generateResponse()));
     }
 }

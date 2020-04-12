@@ -20,3 +20,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::get('/exchange/info', 'ExchangeController@info');
 
+Route::get('/exchange/{value}/{fromCurrency}/{toCurrency}', 'ExchangeController@convert');
+
+Route::get('/cache/clear', 'ExchangeController@clearCache');
+
