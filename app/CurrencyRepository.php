@@ -17,12 +17,21 @@ class CurrencyRepository
     }
 
     public function fetchCurrencyRates($base){
-        return Cache::remember($this->cacheKey.$base, $this->exchange_cache_expiry, function () use ($base){
-            $response = Http::get($this->exchange_rate_url."?base=".$base);
-            if (!$response->successful()) {
-                $response->throw();
-            }
-            return $response->json();
-        });
+
+        if(DatabaseCache::where('key', $this->cacheKey.$base)->exists()){
+            return DatabaseCache::where('key', $this->cacheKey.$base)->first()->value;
+        }
+
+        $response = Http::get($this->exchange_rate_url."?base=".$base);
+        if (!$response->successful()) {
+            $response->throw();
+        }
+        $databaseCache = new DatabaseCache();
+        $databaseCache->key = $this->cacheKey.$base;
+        $databaseCache->value = $response->json();
+        $databaseCache->expiration = $this->exchange_cache_expiry;
+        $databaseCache->save();
+
+        return $databaseCache->value;
     }
 }

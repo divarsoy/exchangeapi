@@ -3,20 +3,17 @@
 namespace Tests\Unit;
 use Tests\TestCase;
 use App\ErrorResponse;
-use App\CurrencyResponse;
 use App\CurrencyRepository;
 use App\Service;
 use App\Exchange;
-use Illuminate\Support\Facades\Cache;
-use App\InfoResponse;
+use App\DatabaseCache;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ExchangeTest extends TestCase
 {
-    private $currencyRepository;
+    use RefreshDatabase;
 
-    public function setUp():void {
-        parent::setup();
-    }
+    private $currencyRepository;
 
     public function testConvertWithNotSupportedFromCurrency()
     {
@@ -108,7 +105,11 @@ class ExchangeTest extends TestCase
             "ToCurrency" => "EUR",
             "Multiplier" => 0.9202171713
         ];
-        Cache::put("USD-EUR", $currencyPair );
+        $databaseCache = new DatabaseCache();
+        $databaseCache->key = "USD-EUR";
+        $databaseCache->value = $currencyPair;
+        $databaseCache->expiration = 7200;
+        $databaseCache->save();
         $currencyRepository = $this->createMock(CurrencyRepository::class);
         $exchange = new Exchange($currencyRepository);
         $expected = [

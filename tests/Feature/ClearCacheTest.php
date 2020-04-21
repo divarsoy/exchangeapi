@@ -4,10 +4,11 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use Illuminate\Support\Facades\Cache;
+use App\DatabaseCache;
 
 class ClearCacheTest extends TestCase
 {
+    use RefreshDatabase;
     /**
      * A basic test example.
      *
@@ -20,7 +21,11 @@ class ClearCacheTest extends TestCase
             "ToCurrency" => "EUR",
             "Multiplier" => 0.9202171713
         ];
-        Cache::put("USD-EUR", $currencyPair, 7200 );
+        $currencyPairCache = new DatabaseCache();
+        $currencyPairCache->key = "USD-EUR";
+        $currencyPairCache->value = $currencyPair;
+        $currencyPairCache->expiration = 7200;
+        $currencyPairCache->save();
         $apiResponse = [
             "rates" => [
                 "CAD" => "1.5265",
@@ -59,13 +64,17 @@ class ClearCacheTest extends TestCase
             "base" => "EUR",
             "date" => "2020-04-09"
         ];
-        Cache::put("exchange_rate_base_EUR", $apiResponse,7200);
+        $databaseCache = new DatabaseCache();
+        $databaseCache->key = "exchange_rate_base_EUR";
+        $databaseCache->value = $apiResponse;
+        $databaseCache->expiration = 7200;
+        $databaseCache->save();
 
         $response = $this->get('/api/cache/clear');
         $expected = '{"error":0,"msg":"Cache has been cleared"}';
         $response->assertSeeText($expected, false);
         $response->assertStatus(200);
-        $this->assertNull(Cache::get("exchange_rate_base_EUR"));
-        $this->assertNull(Cache::get("USD-EUR"));
+        $this->assertNull(DatabaseCache::where("exchange_rate_base_EUR")->first());
+        $this->assertNull(DatabaseCache::where("USD-EUR")->first());
     }
 }

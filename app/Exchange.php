@@ -1,7 +1,6 @@
 <?php declare(strict_types=1);
 
 namespace App;
-use Illuminate\Support\Facades\Cache;
 
 class Exchange
 {
@@ -41,12 +40,12 @@ class Exchange
 
         $inverseCalculation = false;
         // Check cache for key pair, otherwise fetch from api
-        if(Cache::has($fromCurrency."-".$toCurrency)){
-            $currencyPair = Cache::get($fromCurrency."-".$toCurrency);
+        if(DatabaseCache::where('key', $fromCurrency."-".$toCurrency )->exists()){
+            $currencyPair = DatabaseCache::where('key', $fromCurrency."-".$toCurrency)->first()->value;
             $cache = 1;
         }
-        elseif(Cache::has($toCurrency."-".$fromCurrency)){
-            $currencyPair = Cache::get($toCurrency."-".$fromCurrency);
+        elseif(DatabaseCache::where('key', $toCurrency."-".$fromCurrency)->exists()){
+            $currencyPair = DatabaseCache::where('key', $toCurrency."-".$fromCurrency)->first()->value;
             $cache = 1;
             $inverseCalculation = true;
         }
@@ -61,7 +60,11 @@ class Exchange
                 'ToCurrency' => $toCurrency,
                 'Multiplier' => $this->currencyRates[$toCurrency]
             ];
-            Cache::put($fromCurrency."-".$toCurrency, $currencyPair, $this->exchange_cache_expiry );
+            $databaseCache = new DatabaseCache();
+            $databaseCache->key = $fromCurrency."-".$toCurrency;
+            $databaseCache->value = $currencyPair;
+            $databaseCache->expiration = $this->exchange_cache_expiry;
+            $databaseCache->save();
             $cache = 0;
         }
 
