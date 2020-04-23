@@ -1,6 +1,11 @@
 <?php declare(strict_types=1);
 
 namespace App;
+use App\DatabaseCache;
+use App\Responses\CurrencyResponse;
+use App\Responses\ErrorResponse;
+use App\Responses\iResponse;
+
 
 class Exchange
 {
@@ -39,13 +44,14 @@ class Exchange
         }
 
         $inverseCalculation = false;
+
         // Check cache for key pair, otherwise fetch from api
-        if(DatabaseCache::where('key', $fromCurrency."-".$toCurrency )->exists()){
-            $currencyPair = DatabaseCache::where('key', $fromCurrency."-".$toCurrency)->first()->value;
+        if( $fromToCurrencyPair = DatabaseCache::where('key', $fromCurrency."-".$toCurrency)->first()){
+            $currencyPair = $fromToCurrencyPair->value;
             $cache = 1;
         }
-        elseif(DatabaseCache::where('key', $toCurrency."-".$fromCurrency)->exists()){
-            $currencyPair = DatabaseCache::where('key', $toCurrency."-".$fromCurrency)->first()->value;
+        elseif($toFromCurrencyPair = DatabaseCache::where('key', $toCurrency."-".$fromCurrency)->first()){
+            $currencyPair = $toFromCurrencyPair->value;
             $cache = 1;
             $inverseCalculation = true;
         }

@@ -1,0 +1,265 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Exchangeapi.yaml - Exchange API server with mysql as caching engine
+
+Parameters:
+  LatestLinuxAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Description: "AMI to use (Leave as default for latest linux2 AMI)"
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: "Keypair used to login to the instance via ssh"
+  DBUser:
+    Type: String
+    Description: "Username for MySQL user"
+  DBPassword:
+    Type: String
+    Description: "Password for MySQL user"
+    NoEcho: true
+  DBName:
+    Type: String
+    Description: "Database name"
+  DBRootPassword:
+    Type: String
+    Description: "Root password for MySQL"
+    NoEcho: true
+
+Resources:
+  ExchangeApiSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "ExchangeApi"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 86.24.82.178/32
+        Description: "Dag Ivarsoy"
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+        Description: "Everyone"
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+        Description: "Everyone"
+
+  ExchangeApiInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestLinuxAmiId
+      InstanceType: t2.micro
+      KeyName: !Ref KeyPair
+      Tags:
+        - Key: "Name"
+          Value: "ExchangeApi"
+      SecurityGroups:
+        - !Ref ExchangeApiSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            Encrypted: true  
+      UserData: 
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -xe
+            yum -y update aws-cfn-bootstrap
+
+            # Install the files and packages from the metadata
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ExchangeApiInstance --region ${AWS::Region} --configsets ascending || error_exit 'Failed to run cfn-init'
+
+            # Signal the status from cfn-init
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ExchangeApiInstance --region ${AWS::Region}
+    Metadata: 
+      Comment: Install LAMP stack
+      AWS::CloudFormation::Init:
+        configSets: 
+          ascending: 
+            - "setup"
+            - "install"
+            - "configure"
+        setup:   
+          commands:
+            enable_php:
+              command: "amazon-linux-extras enable php7.2"
+              cwd: "~"
+        install:
+          packages:
+            yum:
+              httpd: []
+              mariadb: []
+              mariadb-server: []
+              php: []
+              php-mysqlnd: []
+              php-mbstring: []
+              php-xml: []
+              php-pdo: []
+              php-cli: []
+              php-json: []
+              php-common: []
+          files:
+            "/var/www/.env":
+              content: !Sub |
+                APP_NAME=ExchangeAPI
+                APP_ENV=local
+                APP_KEY=
+                APP_DEBUG=false
+                APP_URL=http://localhost
+
+                LOG_CHANNEL=stack
+
+                DB_CONNECTION=mysql
+                DB_HOST=127.0.0.1
+                DB_PORT=3306
+                DB_DATABASE=${DBName}
+                DB_USERNAME=${DBUser}
+                DB_PASSWORD=${DBPassword}
+
+                BROADCAST_DRIVER=log
+                CACHE_DRIVER=file
+                QUEUE_CONNECTION=sync
+                SESSION_DRIVER=file
+                SESSION_LIFETIME=120
+
+                REDIS_HOST=127.0.0.1
+                REDIS_PASSWORD=null
+                REDIS_PORT=6379
+
+                MAIL_MAILER=smtp
+                MAIL_HOST=smtp.mailtrap.io
+                MAIL_PORT=2525
+                MAIL_USERNAME=null
+                MAIL_PASSWORD=null
+                MAIL_ENCRYPTION=null
+                MAIL_FROM_ADDRESS=null
+                MAIL_FROM_NAME=
+
+                AWS_ACCESS_KEY_ID=
+                AWS_SECRET_ACCESS_KEY=
+                AWS_DEFAULT_REGION=us-east-1
+                AWS_BUCKET=
+
+                PUSHER_APP_ID=
+                PUSHER_APP_KEY=
+                PUSHER_APP_SECRET=
+                PUSHER_APP_CLUSTER=mt1
+
+                EXCHANGE_RATE_URL="https://api.exchangeratesapi.io/latest"
+                EXCHANGE_CACHE_EXPIRY=7200
+              mode: '000644'
+              owner: 'apache'
+              group: 'apache'
+            "/tmp/setup.mysql":
+              content: !Sub |
+                CREATE DATABASE ${DBName};
+                CREATE USER '${DBUser}'@'localhost' IDENTIFIED BY '${DBPassword}';
+                USE ${DBName};
+                GRANT SUPER ON *.* TO '${DBUser}'@'localhost';
+                GRANT ALL PRIVILEGES ON ${DBName}.* TO '${DBUser}'@'localhost' WITH GRANT OPTION;
+                FLUSH PRIVILEGES;
+              mode: '000400'
+              owner: root
+              group: root
+            "/tmp/AppServiceProvider.php":
+              content: |
+                <?php
+
+                namespace App\Providers;
+
+                use Illuminate\Support\ServiceProvider;
+                use Illuminate\Support\Facades\Schema;
+
+                class AppServiceProvider extends ServiceProvider
+                {
+                    /**
+                    * Register any application services.
+                    *
+                    * @return void
+                    */
+                    public function register()
+                    {
+                        //
+                    }
+
+                    /**
+                    * Bootstrap any application services.
+                    *
+                    * @return void
+                    */
+                    public function boot()
+                    {
+                        Schema::defaultStringLength(191);
+                    }
+                }
+              mode: '000664'
+              owner: ec2-user
+              group: apache
+            "/etc/httpd/conf.d/exchangeapi.conf":
+              content: |
+                <Directory "/var/www/exchangeapi-master/public">
+                    Options -Indexes +FollowSymLinks
+                    AllowOverride All
+                    Require all granted
+                </Directory>
+              mode: '000644'
+              owner: root
+              group: root  
+          services:
+            sysvinit:
+              mariadb:
+                enabled: true
+                ensureRunning: true
+              httpd:
+                enabled: true
+                ensureRunning: true
+        configure:
+          commands:
+            01_set_mysql_root_password:
+              command: !Sub |
+                mysqladmin -u root password ${DBRootPassword}
+            02_create_database:
+              command: !Sub |
+                mysql -u root --password=${DBRootPassword} < /tmp/setup.mysql
+            03_install_composer:
+              command: |
+                export COMPOSER_HOME=/root
+                curl -sS https://getcomposer.org/installer | php
+                mv composer.phar /usr/bin/composer
+                chmod +x /usr/bin/composer
+            04_install_project:
+              command: |
+                export COMPOSER_HOME=/root
+                wget https://github.com/divarsoy/exchangeapi/archive/master.zip
+                unzip master.zip -d /var/www
+                mv /var/www/.env /var/www/exchangeapi-master/.env
+                cd /var/www/exchangeapi-master
+                composer install
+                php artisan key:generate
+                mv -f /tmp/AppServiceProvider.php /var/www/exchangeapi-master/app/Providers/AppServiceProvider.php
+                php artisan migrate
+                sed -i "s@localhost:3000@$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):80@" /var/www/exchangeapi-master/public/phptest.html
+                chown ec2-user:apache -R /var/www/exchangeapi-master/
+                chmod g+w -R /var/www/exchangeapi-master/
+            05_configure_and_restart_apache:
+              command: |
+                sed -i 's@/var/www/html@/var/www/exchangeapi-master/public@g' /etc/httpd/conf/httpd.conf
+                systemctl reload httpd
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+
+Outputs:
+  ServerIP:
+    Description: "IP address for the ExchangeApi server"
+    Value: !GetAtt ExchangeApiInstance.PublicIp
+  Username:
+    Description: "Mysql user name"
+    Value: !Ref DBUser
+  WebsiteUrl:
+    Description: "URl to the Exchange server"
+    Value: !GetAtt ExchangeApiInstance.PublicDnsName
+
+
+

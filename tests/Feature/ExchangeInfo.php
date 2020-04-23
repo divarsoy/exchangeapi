@@ -2,10 +2,9 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ExchangeTest extends TestCase
+class ExchangeInfo extends TestCase
 {
     /**
      * A basic test example.

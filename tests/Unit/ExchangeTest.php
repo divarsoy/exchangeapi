@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 use Tests\TestCase;
-use App\ErrorResponse;
+use App\Responses\ErrorResponse;
 use App\CurrencyRepository;
 use App\Service;
 use App\Exchange;
