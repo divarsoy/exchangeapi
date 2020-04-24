@@ -6,7 +6,7 @@ use App\Responses\ErrorResponse;
 use App\CurrencyRepository;
 use App\Service;
 use App\Exchange;
-use App\DatabaseCache;
+use App\ExchangeCache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class ExchangeTest extends TestCase
@@ -100,16 +100,14 @@ class ExchangeTest extends TestCase
 
     public function testGettingMultiplierFromCache()
     {
-        $currencyPair = [
-            "FromCurrency" => "USD",
-            "ToCurrency" => "EUR",
-            "Multiplier" => 0.9202171713
-        ];
-        $databaseCache = new DatabaseCache();
-        $databaseCache->key = "USD-EUR";
-        $databaseCache->value = $currencyPair;
-        $databaseCache->expiration = 7200;
-        $databaseCache->save();
+        $exchangeCache = new ExchangeCache();
+        $exchangeCache->key = "USD-EUR";
+        $exchangeCache->from = "USD";
+        $exchangeCache->to = "EUR";
+        $exchangeCache->multiplier = 0.9202171713;
+        $exchangeCache->expiration = 7200;
+        $exchangeCache->save();
+
         $currencyRepository = $this->createMock(CurrencyRepository::class);
         $exchange = new Exchange($currencyRepository);
         $expected = [

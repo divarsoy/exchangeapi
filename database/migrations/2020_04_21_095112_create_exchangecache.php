@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDatabasecache extends Migration
+class CreateExchangeCache extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,11 @@ class CreateDatabasecache extends Migration
      */
     public function up()
     {
-        Schema::create('databasecache', function (Blueprint $table) {
+        Schema::create('exchangecache', function (Blueprint $table) {
             $table->string('key')->unique();
-            $table->mediumText('value');
+            $table->string('from');
+            $table->string('to');
+            $table->string('multiplier');
             $table->integer('expiration');
             $table->timestamp('created_at')->useCurrent();
         });
@@ -28,6 +30,6 @@ class CreateDatabasecache extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('databasecache');
+        Schema::dropIfExists('exchangecache');
     }
 }

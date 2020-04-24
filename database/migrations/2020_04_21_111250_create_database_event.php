@@ -16,10 +16,10 @@ class CreateDatabaseEvent extends Migration
         if (config('database.default') == 'sqlite') { return;}
 
         DB::connection()->getpdo()->exec("
-                CREATE EVENT IF NOT EXISTS `pruneDatabaseCache`
+                CREATE EVENT IF NOT EXISTS `pruneExchangeCache`
                     ON SCHEDULE EVERY 1 SECOND
                     DO
-                        DELETE FROM `databasecache` WHERE (`created_at` + `expiration`) < NOW();"
+                        DELETE FROM `exchangecache` WHERE (`created_at` + `expiration`) < NOW();"
         );
     }
 
@@ -32,6 +32,6 @@ class CreateDatabaseEvent extends Migration
     {
         if (config('database.default') == 'sqlite') { return;}
 
-        DB::connection()->getpdo()->exec("DROP EVENT IF EXISTS `pruneDatabaseCache`;");
+        DB::connection()->getpdo()->exec("DROP EVENT IF EXISTS `pruneExchangeCache`;");
     }
 }

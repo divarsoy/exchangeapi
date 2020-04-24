@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\DatabaseCache;
+use App\ExchangeCache;
 use App\Exchange;
 use App\Responses\CacheResponse;
 use App\Responses\InfoResponse;
@@ -21,7 +21,7 @@ class ExchangeController extends Controller
     }
 
     protected function clearCache(){
-        DatabaseCache::truncate();
+        ExchangeCache::truncate();
         $response = new CacheResponse(0, "OK");
         return response(json_encode($response->generateResponse()));
     }

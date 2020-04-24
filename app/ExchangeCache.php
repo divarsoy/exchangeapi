@@ -4,14 +4,14 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class DatabaseCache extends Model
+class ExchangeCache extends Model
 {
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table = 'databasecache';
+    protected $table = 'exchangecache';
 
     /**
      * The primary key associated with the table.
@@ -49,5 +49,12 @@ class DatabaseCache extends Model
     protected $casts = [
         'value' => 'array',
     ];
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [ 'key', 'from', 'to', 'multiplier', 'expiration', ];
 
 }

@@ -16,8 +16,8 @@ The main files for the project are:
 - ExchangeController.php - The ExchangeController is responsible for orchestrating the requests and responses and calling the right models to deal with the business logic.
 
 ### Models
-- Exchange.php - The Exchange model deals with the business logic for converting the currencies, using the DatabaseCache to fetch cached data or using the CurrencyRepository to fetch the rates information if not cached. The model will also return an error object for invalid requests.
-- DatabaseCache.php - The DatabaseCache model represents the cache in the database and will handle lookups and storing cached data.
+- Exchange.php - The Exchange model deals with the business logic for converting the currencies, using the ExchangeCache to fetch cached data or using the CurrencyRepository to fetch the rates information if not cached. The model will also return an error object for invalid requests.
+- ExchangeCache.php - The ExchangeCache model represents the cache in the database and will handle lookups and storing cached data.
 - CurrencyRepository.php - The CurrencyRepository handles the request to the the third party api for fetching the rates information. It has got its own model to make it mockable in tests. It will throw an error if the response to the third party api was not successfull.
 
 **Reponse Models:**
@@ -28,7 +28,7 @@ The main files for the project are:
 - iResponse.php - Interface that makes sure all of the Response Objects implements the generateResponse method.
 
 ### Migrations:
-- 2020_04_21_095112_create_databasecache.php - This migration creates the database table to hold the cache. 
+- 2020_04_21_095112_create_exchangecache.php - This migration creates the database table to hold the cache. 
 - 2020_04_21_110554_enable_event_scheduler.php - This migrations starts the mysql event scheduler.
 - 2020_04_21_111250_create_database_event.php - This migration sets up an event to delete any expired cached data every second.
 

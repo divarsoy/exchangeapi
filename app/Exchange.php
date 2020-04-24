@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 namespace App;
-use App\DatabaseCache;
+use App\ExchangeCache;
 use App\Responses\CurrencyResponse;
 use App\Responses\ErrorResponse;
 use App\Responses\iResponse;
@@ -46,12 +46,10 @@ class Exchange
         $inverseCalculation = false;
 
         // Check cache for key pair, otherwise fetch from api
-        if( $fromToCurrencyPair = DatabaseCache::where('key', $fromCurrency."-".$toCurrency)->first()){
-            $currencyPair = $fromToCurrencyPair->value;
+        if( $currencyPair = ExchangeCache::where('key', $fromCurrency."-".$toCurrency)->first()){
             $cache = 1;
         }
-        elseif($toFromCurrencyPair = DatabaseCache::where('key', $toCurrency."-".$fromCurrency)->first()){
-            $currencyPair = $toFromCurrencyPair->value;
+        elseif($currencyPair = ExchangeCache::where('key', $toCurrency."-".$fromCurrency)->first()){
             $cache = 1;
             $inverseCalculation = true;
         }
@@ -61,25 +59,22 @@ class Exchange
             } catch (\Exception $exception) {
                 return new ErrorResponse(1, "Could not fetch currency rates, please try again later");
             }
-            $currencyPair = [
-                'FromCurrency' => $fromCurrency,
-                'ToCurrency' => $toCurrency,
-                'Multiplier' => $this->currencyRates[$toCurrency]
-            ];
-            $databaseCache = new DatabaseCache();
-            $databaseCache->key = $fromCurrency."-".$toCurrency;
-            $databaseCache->value = $currencyPair;
-            $databaseCache->expiration = $this->exchange_cache_expiry;
-            $databaseCache->save();
+            $currencyPair = new ExchangeCache();
+            $currencyPair->key = $fromCurrency."-".$toCurrency;
+            $currencyPair->from = $fromCurrency;
+            $currencyPair->to = $toCurrency;
+            $currencyPair->multiplier = $this->currencyRates[$toCurrency];
+            $currencyPair->expiration = $this->exchange_cache_expiry;
+            $currencyPair->save();
             $cache = 0;
         }
 
         // Calculate currency
         if($inverseCalculation){
-            $convertedValue = $value/$currencyPair['Multiplier'];
+            $convertedValue = $value/$currencyPair->multiplier;
         }
         else {
-            $convertedValue = $value*$currencyPair['Multiplier'];
+            $convertedValue = $value*$currencyPair->multiplier;
         }
         return new CurrencyResponse(0, $convertedValue, $cache);
     }

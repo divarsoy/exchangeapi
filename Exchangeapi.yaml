@@ -156,7 +156,6 @@ Resources:
                 CREATE DATABASE ${DBName};
                 CREATE USER '${DBUser}'@'localhost' IDENTIFIED BY '${DBPassword}';
                 USE ${DBName};
-                GRANT SUPER ON *.* TO '${DBUser}'@'localhost';
                 GRANT ALL PRIVILEGES ON ${DBName}.* TO '${DBUser}'@'localhost' WITH GRANT OPTION;
                 FLUSH PRIVILEGES;
               mode: '000400'
