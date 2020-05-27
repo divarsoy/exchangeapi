@@ -1,0 +1,101 @@
+openapi: 3.0.0
+tags:
+  - name: exchangeapi
+info:
+  title: exchangeAPI
+  version: '1.0'
+  description: Exchange API
+  contact:
+    name: Dag Ivarsoy
+    url: 'https://ivarsoysolutions.co.uk'
+    email: dag@ivarsoysolutions.co.uk
+servers:
+  - url: 'http://exchangeapi.test'
+    description: Exchangeapi
+paths:
+  /api/exchange/info:
+    get:
+      summary: Your GET endpoint
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: integer
+                  msg:
+                    type: string
+              examples:
+                example:
+                  value:
+                    error: 0
+                    msg: API written by Dag Ivarsoy
+      operationId: get-api-info
+      tags:
+        - exchangeapi
+      description: Fetch API Info
+      parameters: []
+  '/api/exchange/{amount}/{fromCurrency}/{toCurrency}':
+    parameters:
+      - schema:
+          type: integer
+        name: amount
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: fromCurrency
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: toCurrency
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      description: Convert amount between two currencies
+      tags: []
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            text/html:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: integer
+                  amount:
+                    type: string
+                  fromCache:
+                    type: integer
+              examples:
+                example:
+                  value:
+                    error: 0
+                    amount: '80.98'
+                    fromCache: 1
+        '404':
+          description: Not Found
+          content:
+            text/html:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: integer
+                  msg:
+                    type: string
+              examples:
+                example:
+                  value:
+                    error: 1
+                    msg: currency code fromCurrency not supported
+      operationId: get-api-exchange-amount-fromCurrency-toCurrency
+components:
+  schemas: {}
